@@ -3,7 +3,8 @@
     Flags are set to calculate descriptors in config.ini
     Sections in the config file must correspond to the name of the module, format <sectionname>_desc.py
 
-
+    Usage:
+        python main.py <inputfile>
 """
 
 import configparser
@@ -81,7 +82,10 @@ class DescriptorCalculator:
         for mol, mol_name in zip(df["guestmol"],df.index):
             for i,j in section_flags.items():
                 if j and i != "run":
-                    attr = getattr(module, i)(mol)
+                    try:
+                        attr = getattr(module, i)(mol)
+                    except:
+                        attr = np.nan
                     if not isinstance(attr, list):
                         df.at[mol_name,i] = attr
                     elif isinstance(attr, list) or isinstance(attr, np.array):
@@ -115,6 +119,7 @@ def main():
             if section == "xtb":
                 # Run an xtb calculation, add the dictionary of results as a property of the guestmol object
                 xtb_opt(df)
+                print(df)
             df = calc.calc_section(df,section)
 
     print(df)

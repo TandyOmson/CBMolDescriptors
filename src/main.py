@@ -14,10 +14,11 @@ import pandas as pd
 import numpy as np
 
 import sys
+import os
 import pprint
 
 from inout import get_csv_smiles, get_sdfs
-from prog_ops import get_flags_as_dict, xtb_calc, xtb_opt, df_item
+from prog_ops import get_flags_as_dict, xtb_calc, xtb_opt, xtb_extract, df_item
 
 class configManager:
     """ Class for managing config.ini file
@@ -118,7 +119,10 @@ def main():
         if runflag == True:
             if section == "xtb":
                 # Run an xtb calculation, add the dictionary of results as a property of the guestmol object
-                xtb_opt(df)
+                if os.path.isdir("./xtb_temp"):
+                    df = xtb_extract(df)
+                else:
+                    df = xtb_opt(df)
                 print(df)
             df = calc.calc_section(df,section)
 

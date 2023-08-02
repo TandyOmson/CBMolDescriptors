@@ -71,7 +71,26 @@ def xtb_opt(df):
         # Don't forget to add write SASA to input file
         with open("xtb.inp","w") as fw:
             fw.write("$write\n  gbsa=true\n$end\n")
-        sp.run(["xtb","--input","xtb.inp",f"{mol_name}.sdf","--opt","vtight","--alpb","water"],stdout=open(f"{mol_name}.out","w"))
+        sp.run(["xtb","--input","xtb.inp",f"{mol_name}.sdf","--opt","loose","--alpb","water"],stdout=open(f"{mol_name}.out","w"))
+        propdict = read_opt_out(f"{mol_name}.out")
+
+        # Add calculations from xTB to mol properties
+        for prop,value in propdict.items():
+            if isinstance(value,float):
+                mol.SetDoubleProp(prop,value)
+            elif isinstance(value,list):
+                for count,i in enumerate(value,1):
+                    mol.SetDoubleProp(f"{prop}_{count}",float(i))
+    
+    os.chdir("./../")
+
+    return df
+
+def xtb_extract(df):
+    """ If the xTB outfiles already exist, reads results as properties of the molecule object
+    """
+    os.chdir("./xtb_temp")
+    for mol,mol_name in zip(df["guestmol"],df.index):
         propdict = read_opt_out(f"{mol_name}.out")
 
         # Add calculations from xTB to mol properties

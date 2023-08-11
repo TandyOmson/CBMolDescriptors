@@ -1,7 +1,5 @@
 """ Helper functions """
 
-import tblite
-from tblite.interface import Structure, Calculator
 import numpy as np
 from rdkit import Chem
 from rdkit.Chem import PropertyMol
@@ -104,39 +102,3 @@ def xtb_extract(df):
     os.chdir("./../")
 
     return df
-
-
-def xtb_calc(df):
-    """ Runs xTB calculations, adds all results as properties of the molecule object
-        CURRENTLY NOT USED, SEE "xtb_opt" FUNCTION
-    """
-    for mol,mol_name in zip(df["guestmol"],df.index):
-        positions=np.array(mol.GetConformer().GetPositions())
-        numbers=np.array([atom.GetAtomicNum() for atom in mol.GetAtoms()])
-        charge = Chem.GetFormalCharge(mol)
-        calc = Calculator("GFN2-xTB", numbers, positions, charge=charge)
-        res = calc.singlepoint()
-
-        # Partial charges are added to each atom
-        for i,j in zip(mol.GetAtoms(),res.get("charges")):
-            i.SetDoubleProp("partial",j)
-        
-        # Energy is stored in properties of the first atom
-        mol.GetAtoms()[0].SetDoubleProp("energy",float(res.get("energy")))
-
-        # Dipole is stored in the first three atoms
-        for i,j in zip(mol.GetAtoms(),res.get("dipole")):
-            i.SetDoubleProp("dipole",j)
-
-        # Quadrupole is stored in the first six atoms
-        for i,j in zip(mol.GetAtoms(),res.get("quadrupole")):
-            i.SetDoubleProp("quadrupole",j)
-
-    return df
-
-class df_item:
-    """ Class for storing lists and arrays as single objects in a dataframe
-        for ease of insertion and reading
-    """
-    def __init__(self, listorarray):
-        self.contents = listorarray

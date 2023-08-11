@@ -18,7 +18,9 @@ import os
 import pprint
 
 from inout import get_csv_smiles, get_sdfs
-from prog_ops import get_flags_as_dict, xtb_calc, xtb_opt, xtb_extract, df_item
+from prog_ops import get_flags_as_dict, xtb_opt, xtb_extract
+
+from collections.abc import Iterable
 
 class configManager:
     """ Class for managing config.ini file
@@ -87,14 +89,71 @@ class DescriptorCalculator:
                         attr = getattr(module, i)(mol)
                     except:
                         attr = np.nan
-                    if not isinstance(attr, list):
-                        df.at[mol_name,i] = attr
-                    elif isinstance(attr, list) or isinstance(attr, np.array):
-                        # Add to dataframe as class object for ease of reading
-                        attr_df = df_item(attr)
-                        df.at[mol_name,i] = attr_df
+
+                    attr = Descriptor(attr,i)
+                    df.at[mol_name,i] = attr
 
         return df
+    
+    def unpack_df_descriptors(self,df):
+        """ Unpacks all multidimensional descriptors in a dataframe
+        """
+        for i in df.columns:
+            df[i] = df[i].apply(lambda x: x.unpack_descriptor() if isinstance(x, Descriptor) else x)
+
+        return df
+
+    # CURRENTLY UNUSED, I WILL DELETE IT AFTER IMPLEMENTING IN ANALYSIS SCRIPTS (SAME WITH WEIGHTING MULTI-ELEMENT DESCRIPTORS)
+    def normalize(self, df):
+        """ Normalize all descriptors in df, such that they have a mean of 0 and a standard deviation of 1
+            Must be done after unpacking multi-element descriptors
+        """
+        for i in df.columns:
+            df[i] = (df[i] - df[i].mean()) / df[i].std()
+
+        return df
+    
+class Descriptor:
+    """ Class for storing a descriptor and all its elements, before entry into dataframe
+    """
+    def __init__(self, descriptor, desc_name):
+        self.contents = descriptor
+        self.desc_name = desc_name
+        self.desc_shape = np.shape(descriptor)
+        if self.desc_shape != ():
+            self.contents = np.array(self.contents)
+
+    def unpack_descriptor(self):
+        """ Unpack descriptor into a dictionary containing all elements of the descriptor and labels
+        """ 
+        desc_dict = {}
+
+        if isinstance(self.contents, Iterable):
+            ndim = len(self.desc_shape)
+            if ndim == 1:
+                for count,i in enumerate(self.contents):
+                    desc_dict[f"{self.desc_name}_{count}"] = i
+            elif ndim == 2:
+                for i in range(self.desc_shape[0]):
+                    for j in range(self.desc_shape[1]):
+                        desc_dict[f"{self.desc_name}_{i}{j}"] = self.contents[i][j]
+            elif ndim == 3:
+                for i in range(self.desc_shape[0]):
+                    for j in range(self.desc_shape[1]):
+                        for k in range(self.desc_shape[2]):
+                            desc_dict[f"{self.desc_name}_{i}{j}{k}"] = self.contents[i][j][k]
+            elif ndim == 4:
+                for i in range(self.desc_shape[0]):
+                    for j in range(self.desc_shape[1]):
+                        for k in range(self.desc_shape[2]):
+                            for l in range(self.desc_shape[3]):
+                                desc_dict[f"{self.desc_name}_{i}{j}{k}{l}"] = self.contents[i][j][k][l]
+
+        else:
+            desc_dict[self.desc_name] = self.contents
+
+        return desc_dict
+            
 
 def main():
     """ Main function for calculating molecular descriptors """
@@ -126,8 +185,9 @@ def main():
                 print(df)
             df = calc.calc_section(df,section)
 
-    print(df)
-    df.to_pickle("/home/spine/DProjects/DDescriptCalc/results/descriptors.pkl")
+    df_unpacked = calc.unpack_df_descriptors(df)
+    df_unpacked.to_pickle("./../results/descriptors.pkl")
+    print(df_unpacked)
 
 if __name__ == "__main__":
     main()

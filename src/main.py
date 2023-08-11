@@ -102,16 +102,6 @@ class DescriptorCalculator:
             df[i] = df[i].apply(lambda x: x.unpack_descriptor() if isinstance(x, Descriptor) else x)
 
         return df
-
-    # CURRENTLY UNUSED, I WILL DELETE IT AFTER IMPLEMENTING IN ANALYSIS SCRIPTS (SAME WITH WEIGHTING MULTI-ELEMENT DESCRIPTORS)
-    def normalize(self, df):
-        """ Normalize all descriptors in df, such that they have a mean of 0 and a standard deviation of 1
-            Must be done after unpacking multi-element descriptors
-        """
-        for i in df.columns:
-            df[i] = (df[i] - df[i].mean()) / df[i].std()
-
-        return df
     
 class Descriptor:
     """ Class for storing a descriptor and all its elements, before entry into dataframe

@@ -15,7 +15,7 @@ Descriptors:
     - Flexible torsion
     - Ringnum
     - Aromatic ringnum
-    - LogP (octanol-water partition coefficient)
+    - LogP (octanol-water partition coefficient) (better to find hexadecane logL descriptors?)
 """
 
 from rdkit import Chem

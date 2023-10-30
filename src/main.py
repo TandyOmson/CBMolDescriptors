@@ -98,10 +98,16 @@ class DescriptorCalculator:
     def unpack_df_descriptors(self,df):
         """ Unpacks all multidimensional descriptors in a dataframe
         """
-        for i in df.columns:
-            df[i] = df[i].apply(lambda x: x.unpack_descriptor() if isinstance(x, Descriptor) else x)
-
-        return df
+        new_df = pd.DataFrame()
+        new_dict = {}
+        for i in range(0,df.shape[0]):
+            for j in range(2,df.shape[1]):
+                new_dict.update(df.iloc[i,j].unpack_descriptor())
+            concat_df = pd.DataFrame(data=new_dict,index=[df.iloc[i,0]])
+            print(concat_df)
+            new_df = pd.concat([new_df,concat_df],axis=0)
+        
+        return new_df
     
 class Descriptor:
     """ Class for storing a descriptor and all its elements, before entry into dataframe
